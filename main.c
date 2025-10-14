@@ -12,35 +12,55 @@ bool func1(int num) {
     return sum > num;
 }
 
-void rec(int start, int end, bool ppp) {
-    if (start > end) {
-        if (!ppp) {
+void rec1(int ppp, int end, bool firstnumber) {
+    if (ppp > end) {
+        if (firstnumber) {
             printf("В диапазоне нет избыточных чисел.\n");
+        } else {
+            printf("\n");
         }
         return;
     }
-    
-    if (func1(start)) {
-        if (!ppp) {
+    if (func1(ppp)) {
+        if (firstnumber) {
             printf("Цепочка избыточных чисел: ");
-            ppp = true;
-        }
-        printf("%d ", start);
-        
-        rec(start + 1, end, ppp);
-    } else {
-        if (ppp) {
-            printf("\n");
-            return;
+            printf("%d",ppp);
         } else {
-            rec(start + 1, end, ppp);
+            printf(" %d", ppp);
         }
+        rec1(ppp + 1, end, false);
+    } else {
+        rec1(ppp + 1, end, firstnumber);
     }
+}
+
+void rec2(int ppp, int end) {
+    if (ppp > end) {
+        return;
+    }
+    if (func1(ppp)) {
+        int sum = 0;
+        printf("%d: делители ", ppp);
+        
+        bool first = true;
+        for (int j = 1; j <= ppp / 2; j++) {
+            if (ppp % j == 0) {
+                if (!first) {
+                    printf(", ");
+                }
+                printf("%d", j);
+                sum += j;
+                first = false;
+            }
+        }
+        printf(" |сумма = %d > %d\n", sum, ppp);
+    }
+    rec2(ppp + 1, end);
 }
 
 bool func2(int N, int M) {
     if (N <= 0 || M <= 0) {
-        printf("ERROR: числа должны быть натуральными.\n");
+        printf("ERROR: числа должны быть натуральными (>0).\n");
         return false;
     }
     if (N > M) {
@@ -57,6 +77,7 @@ int main() {
         printf("ERROR: некорректное N.\n");
         return 1;
     }
+    
     printf("Введите натуральное число M: ");
     if (scanf("%d", &M) != 1) {
         printf("ERROR: некорректное M.\n");
@@ -66,21 +87,10 @@ int main() {
         return 1;
     }
     
-    rec(N, M, false);
-    printf("\n\nИзбыточные числа в диапазоне:\n");
-    for (int i = N; i <= M; i++) {
-        if (func1(i)) {
-            int sum = 0;
-            printf("%d: делители ", i);
-            for (int j = 1; j <= i / 2; j++) {
-                if (i % j == 0) {
-                    printf("%d", j);
-                    sum += j;
-                    if (j < i / 2) printf(", ");
-                }
-            }
-            printf(" | сумма = %d > %d\n", sum, i);
-        }
-    }
+    printf("\nДиапазон: от %d до %d\n", N, M);
+    rec1(N, M, true);
+    
+    printf("Все избыточные числа в диапазоне:\n");
+    rec2(N, M);
     return 0;
 }
