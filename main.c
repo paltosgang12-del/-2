@@ -1,96 +1,112 @@
 #include <stdio.h>
-#include <stdbool.h>
+#include <stdlib.h>
+#include <limits.h>
 
-bool func1(int num) {
-    if (num < 1) return false;
-    int sum = 0;
-    for (int i = 1; i <= num / 2; i++) {
-        if (num % i == 0) {
-            sum += i;
+int** readMatrix(const char* filename, int* N, int* M) {
+    FILE* file = fopen(filename, "r");
+    if (file == NULL) {
+        printf("ERROR: Не удалось открыть файл %s\n", filename);
+        exit(1);
+    }
+    if (fscanf(file, "%d %d", N, M) != 2) {
+        printf("ERROR: Неверный формат размеров матрицы\n");
+        fclose(file);
+        exit(1);
+    }
+
+    int** matrix = (int**)malloc(*N * sizeof(int*));
+    if (matrix == NULL) {
+        printf("Ошибка выделения памяти\n");
+        fclose(file);
+        exit(1);
+    }
+
+    for (int i = 0; i < *N; i++) {
+        matrix[i] = (int*)malloc(*M * sizeof(int));
+        if (matrix[i] == NULL) {
+            printf("Ошибка выделения памяти\n");
+            for (int j = 0; j < i; j++) {
+                free(matrix[j]);
+            }
+            free(matrix);
+            fclose(file);
+            exit(1);
         }
     }
-    return sum > num;
-}
 
-void rec1(int ppp, int end, bool firstnumber) {
-    if (ppp > end) {
-        if (firstnumber) {
-            printf("В диапазоне нет избыточных чисел.\n");
-        } else {
-            printf("\n");
-        }
-        return;
-    }
-    if (func1(ppp)) {
-        if (firstnumber) {
-            printf("Цепочка избыточных чисел: ");
-            printf("%d",ppp);
-        } else {
-            printf(" %d", ppp);
-        }
-        rec1(ppp + 1, end, false);
-    } else {
-        rec1(ppp + 1, end, firstnumber);
-    }
-}
-
-void rec2(int ppp, int end) {
-    if (ppp > end) {
-        return;
-    }
-    if (func1(ppp)) {
-        int sum = 0;
-        printf("%d: делители ", ppp);
-        
-        bool first = true;
-        for (int j = 1; j <= ppp / 2; j++) {
-            if (ppp % j == 0) {
-                if (!first) {
-                    printf(", ");
+    for (int i = 0; i < *N; i++) {
+        for (int j = 0; j < *M; j++) {
+            if (fscanf(file, "%d", &matrix[i][j]) != 1) {
+                printf("ERROR: Неверный формат данных в файле\n");
+                for (int k = 0; k < *N; k++) {
+                    free(matrix[k]);
                 }
-                printf("%d", j);
-                sum += j;
-                first = false;
+                free(matrix);
+                fclose(file);
+                exit(1);
             }
         }
-        printf(" |сумма = %d > %d\n", sum, ppp);
     }
-    rec2(ppp + 1, end);
+    fclose(file);
+    return matrix;
 }
 
-bool func2(int N, int M) {
-    if (N <= 0 || M <= 0) {
-        printf("ERROR: числа должны быть натуральными (>0).\n");
-        return false;
+void printMatrix(int** matrix, int N, int M) {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < M; j++) {
+            printf("%d ", matrix[i][j]);
+        }
+        printf("\n");
     }
-    if (N > M) {
-        printf("ERROR: первое число должно быть <= второму.\n");
-        return false;
-    }
-    return true;
 }
 
-int main() {
+void freeMatrix(int** matrix, int N) {
+    for (int i = 0; i < N; i++) {
+        free(matrix[i]);
+    }
+    free(matrix);
+}
+
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        printf("Использование: %s <имя_файла>\n", argv[0]);
+        return 1;
+    }
+    const char* filename = argv[1];
     int N, M;
-    printf("Введите натуральное число N: ");
-    if (scanf("%d", &N) != 1) {
-        printf("ERROR: некорректное N.\n");
+    int** matrix = readMatrix(filename, &N, &M);
+    printf("Исходная матрица:\n");
+    printMatrix(matrix, N, M);
+    printf("\n");
+
+    int product = 1;
+    int diagSize = (N < M) ? N : M;
+    for (int i = 0; i < diagSize; i++) {
+        product *= matrix[i][i];
+    }
+    printf("Произведение элементов главной диагонали: %d\n \n", product);
+
+    if (N < 3) {
+        printf("ERROR: Матрица должна иметь >=3 строк\n");
+        freeMatrix(matrix, N);
         return 1;
     }
     
-    printf("Введите натуральное число M: ");
-    if (scanf("%d", &M) != 1) {
-        printf("ERROR: некорректное M.\n");
-        return 1;
+    int minElement = INT_MAX;
+    int minCol = 0;
+    for (int j = 0; j < M; j++) {
+        if (matrix[2][j] < minElement) {
+            minElement = matrix[2][j];
+            minCol = j;
+        }
     }
-    if (!func2(N, M)) {
-        return 1;
-    }
-    
-    printf("\nДиапазон: от %d до %d\n", N, M);
-    rec1(N, M, true);
-    
-    printf("Все избыточные числа в диапазоне:\n");
-    rec2(N, M);
+    printf("Минимальный элемент в третьей строке: %d\n \n", minElement);
+
+    int temp = matrix[2][minCol];
+    matrix[2][minCol] = product;
+    printf("Матрица после замены:\n");
+    printMatrix(matrix, N, M);
+
+    freeMatrix(matrix, N);
     return 0;
 }
