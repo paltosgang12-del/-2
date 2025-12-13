@@ -1,23 +1,43 @@
 #include "cat.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#define DATA_FILE "catcafe.dat"
+#define MAX_FILENAME 100
 
 void print_menu(void);
 void search_menu(Database *db);
 void wait_for_enter(void);
 
 int main(void) {
-    printf("\nБаза данных котокафе\n");
-    
     Database *db = create_database();
     if (!db) {
         printf("Ошибка создания базы данных\n");
         return 1;
     }
     
-    load_data(db, DATA_FILE);
+    char filename[MAX_FILENAME];
+    while (1) {
+        printf("Введите имя файла базы данных: ");
+        if (fgets(filename, sizeof(filename), stdin) == NULL) {
+            printf("Ошибка ввода\n");
+            continue;
+        }
+        
+        size_t len = strlen(filename);
+        if (len > 0 && filename[len - 1] == '\n') {
+            filename[len - 1] = '\0';
+        }
+        
+        if (strlen(filename) == 0) {
+            printf("Имя файла не может быть пустотой\n");
+            continue;
+        }
+        
+        break;
+    }
+    
+    load_data(db, filename);
     
     int choice;
     int id_input;
@@ -72,8 +92,8 @@ int main(void) {
                 break;
                 
             case 7:
-                save_data(db, DATA_FILE);
-                printf("Данные сохранены\n");
+                save_data(db, filename);
+                printf("Данные сохранены в файл: %s\n", filename);
                 break;
                 
             case 8:
@@ -88,7 +108,7 @@ int main(void) {
         
     } while (choice != 8);
     
-    save_data(db, DATA_FILE);
+    save_data(db, filename);
     free_database(db);
     
     printf("Программа завершена\n");
