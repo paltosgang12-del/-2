@@ -1,24 +1,17 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -std=c99 -O2
-TARGET = catcafe
-SOURCES = main.c cat.c
-OBJECTS = main.o cat.o
+program: main.o kot.o baza.o
+	g++ main.o kot.o baza.o -o program
 
-all: $(TARGET)
+main.o: main.cpp kot.h baza.h
+	g++ -c main.cpp
 
-$(TARGET): $(OBJECTS)
-	$(CC) $(CFLAGS) -o $@ $(OBJECTS)
+kot.o: kot.cpp kot.h
+	g++ -c kot.cpp
 
-main.o: main.c cat.h
-	$(CC) $(CFLAGS) -c main.c -o main.o
-
-cat.o: cat.c cat.h
-	$(CC) $(CFLAGS) -c cat.c -o cat.o
+baza.o: baza.cpp baza.h kot.h
+	g++ -c baza.cpp
 
 clean:
-	rm -f $(OBJECTS) $(TARGET) catcafe.dat catcafe.bak
+	rm -f *.o program
 
-run: $(TARGET)
-	./$(TARGET)
-
-.PHONY: all clean run
+run:
+	./program
