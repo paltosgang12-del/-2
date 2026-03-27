@@ -1,16 +1,47 @@
 #include "baza.h"
 #include <fstream>
 #include <iostream>
-#include <string>
 #include <limits>
+#include <sstream>
 
-void BazaKotov::zagruzit(const char* file, Kot** &massiv, int &kol) {
-    std::ifstream f(file);
+BazaKotov::BazaKotov()
+    : m_koty(nullptr), m_kolichestvo(0), m_imyaFaila("koty.txt") {}
+
+BazaKotov::BazaKotov(const std::string& imyaFaila)
+    : m_koty(nullptr), m_kolichestvo(0), m_imyaFaila(imyaFaila) {}
+
+BazaKotov::~BazaKotov() {
+    for (int i = 0; i < m_kolichestvo; i++) {
+        delete m_koty[i];
+    }
+    delete[] m_koty;
+}
+
+void BazaKotov::udvoitMassiv() {
+    Kot** noviy = new Kot*[m_kolichestvo + 1];
+    for (int i = 0; i < m_kolichestvo; i++) {
+        noviy[i] = m_koty[i];
+    }
+    delete[] m_koty;
+    m_koty = noviy;
+}
+
+void BazaKotov::umenshitMassiv(int index) {
+    Kot** noviy = new Kot*[m_kolichestvo - 1];
+    for (int i = 0, j = 0; i < m_kolichestvo; i++) {
+        if (i != index) {
+            noviy[j++] = m_koty[i];
+        }
+    }
+    delete[] m_koty;
+    m_koty = noviy;
+}
+
+bool BazaKotov::zagruzit() {
+    std::ifstream f(m_imyaFaila);
     if (!f.is_open()) {
-        std::cout << "Файл не найден, создаю новую базу\n";
-        kol = 0;
-        massiv = nullptr;
-        return;
+        std::cout << "Файл " << m_imyaFaila << " не найден, создаю новую базу\n";
+        return false;
     }
     
     int count = 0;
@@ -22,183 +53,180 @@ void BazaKotov::zagruzit(const char* file, Kot** &massiv, int &kol) {
     f.clear();
     f.seekg(0);
     
-    massiv = new Kot*[count];
-    kol = count;
+    m_koty = new Kot*[count];
+    m_kolichestvo = count;
     
     for (int i = 0; i < count; i++) {
-        massiv[i] = new Kot();
-        f >> (*massiv[i]);
+        m_koty[i] = new Kot();
+        f >> (*m_koty[i]);
     }
     f.close();
-    std::cout << "Загружено " << kol << " котов\n";
+    std::cout << "Загружено " << m_kolichestvo << " котов из " << m_imyaFaila << "\n";
+    return true;
 }
 
-void BazaKotov::sohranit(const char* file, Kot** massiv, int kol) {
-    std::ofstream f(file);
-    for (int i = 0; i < kol; i++) {
-        f << (*massiv[i]) << "\n";
+bool BazaKotov::sohranit() const {
+    std::ofstream f(m_imyaFaila);
+    if (!f.is_open()) {
+        std::cout << "Ошибка сохранения в файл " << m_imyaFaila << "\n";
+        return false;
+    }
+    for (int i = 0; i < m_kolichestvo; i++) {
+        f << (*m_koty[i]) << "\n";
     }
     f.close();
-    std::cout << "Сохранено " << kol << " записей\n";
+    std::cout << "Сохранено " << m_kolichestvo << " записей в " << m_imyaFaila << "\n";
+    return true;
 }
 
-void BazaKotov::menu() {
-    std::cout << "\n===== КОТОКАФЕ =====\n";
-    std::cout << "1. Показать всех\n";
-    std::cout << "2. Найти кота\n";
-    std::cout << "3. Добавить\n";
-    std::cout << "4. Удалить\n";
-    std::cout << "5. Редактировать\n";
-    std::cout << "6. Сохранить и выйти\n";
-    std::cout << "Выбери: ";
+void BazaKotov::sohranitKak(const std::string& novoeImya) {
+    m_imyaFaila = novoeImya;
+    sohranit();
 }
 
-void BazaKotov::pokazat(Kot** massiv, int kol) {
-    if (kol == 0) {
-        std::cout << "Пусто\n";
+void BazaKotov::pokazat() const {
+    if (m_kolichestvo == 0) {
+        std::cout << "База пуста\n";
         return;
     }
-    std::cout << "\n--- Котики ---\n";
-    for (int i = 0; i < kol; i++) {
-        std::cout << i+1 << ". "
-                  << "Имя: " << massiv[i]->getImya() << " | "
-                  << "Порода: " << massiv[i]->getPoroda() << " | "
-                  << "Возраст: " << massiv[i]->getVozrast() << " лет | "
-                  << "Окрас: " << massiv[i]->getCvet() << " | "
-                  << "Приметы: " << massiv[i]->getPrimeti() << " | ";
-        if (massiv[i]->getNaMeste())
-            std::cout << "на месте\n";
-        else
-            std::cout << "отдыхает\n";
+    std::cout << "\n=== Коты в котокафе ===\n";
+    for (int i = 0; i < m_kolichestvo; i++) {
+        std::cout << i + 1 << ". "
+                  << "Имя: " << m_koty[i]->getImya() << " | "
+                  << "Порода: " << m_koty[i]->getPoroda() << " | "
+                  << "Возраст: " << m_koty[i]->getVozrast() << " лет | "
+                  << "Окрас: " << m_koty[i]->getCvet() << " | "
+                  << "Приметы: " << m_koty[i]->getPrimeti() << " | "
+                  << (m_koty[i]->getNaMeste() ? "на месте" : "отдыхает") << "\n";
     }
 }
 
-void BazaKotov::poisk(Kot** massiv, int kol) {
-    if (kol == 0) {
-        std::cout << "Нет котов\n";
+void BazaKotov::poisk() const {
+    if (m_kolichestvo == 0) {
+        std::cout << "Нет котов для поиска\n";
         return;
     }
     
-    std::cin.ignore(32767, '\n');
-    std::string poImeni, poPorode;
-    
-    std::cout << "Имя (можно пусто): ";
-    std::getline(std::cin, poImeni);
-    std::cout << "Порода (можно пусто): ";
-    std::getline(std::cin, poPorode);
+    std::string poImeni = vvodStroki("Имя для поиска (можно пусто): ");
+    std::string poPorode = vvodStroki("Порода для поиска (можно пусто): ");
     
     int nashli = 0;
-    for (int i = 0; i < kol; i++) {
-        bool sovpI = (poImeni.empty() || massiv[i]->getImya().find(poImeni) != std::string::npos);
-        bool sovpP = (poPorode.empty() || massiv[i]->getPoroda().find(poPorode) != std::string::npos);
+    for (int i = 0; i < m_kolichestvo; i++) {
+        bool sovpI = poImeni.empty() ||
+                     m_koty[i]->getImya().find(poImeni) != std::string::npos;
+        bool sovpP = poPorode.empty() ||
+                     m_koty[i]->getPoroda().find(poPorode) != std::string::npos;
         
         if (sovpI && sovpP) {
             if (nashli == 0) std::cout << "\nНайдено:\n";
-            std::cout << i+1 << ". " << massiv[i]->getImya() << " (" << massiv[i]->getPoroda() << ")\n";
+            std::cout << i + 1 << ". Имя: " << m_koty[i]->getImya()
+                      << " | Порода: " << m_koty[i]->getPoroda()
+                      << " | Возраст: " << m_koty[i]->getVozrast() << " лет\n";
             nashli++;
         }
     }
-    if (nashli == 0) std::cout << "Ничего\n";
+    if (nashli == 0) std::cout << "Ничего не найдено\n";
 }
 
-void BazaKotov::dobavit(Kot** &massiv, int &kol) {
-    std::cin.ignore(32767, '\n');
-    std::string i, p, c, prim;
-    int v;
-    char m;
+void BazaKotov::dobavit() {
+    std::string imya = vvodStroki("Кличка: ");
+    std::string poroda = vvodStroki("Порода: ");
+    int vozrast = vvodCisla("Возраст: ", 0, 30);
+    std::string cvet = vvodStroki("Окрас: ");
+    std::string primeti = vvodStroki("Приметы: ");
+    bool naMeste = vvodBoolean("На месте? (y/n): ");
     
-    std::cout << "Кличка: "; std::getline(std::cin, i);
-    std::cout << "Порода: "; std::getline(std::cin, p);
-    std::cout << "Возраст: "; std::cin >> v; std::cin.ignore();
-    std::cout << "Окрас: "; std::getline(std::cin, c);
-    std::cout << "Приметы: "; std::getline(std::cin, prim);
-    std::cout << "На месте? (y/n): "; std::cin >> m; std::cin.ignore();
+    udvoitMassiv();
+    m_koty[m_kolichestvo] = new Kot(imya, poroda, vozrast, cvet, primeti, naMeste);
+    m_kolichestvo++;
     
-    bool naM = (m == 'y' || m == 'Y');
-    
-    Kot** noviy = new Kot*[kol + 1];
-    for (int j = 0; j < kol; j++) {
-        noviy[j] = massiv[j];
-    }
-    noviy[kol] = new Kot(i, p, v, c, prim, naM);
-    
-    delete[] massiv;
-    massiv = noviy;
-    kol++;
-    std::cout << "Добавлен!\n";
+    std::cout << "Кот добавлен\n";
 }
 
-void BazaKotov::udalit(Kot** &massiv, int &kol) {
-    if (kol == 0) {
-        std::cout << "Нет котов\n";
+void BazaKotov::udalit() {
+    if (m_kolichestvo == 0) {
+        std::cout << "Нет котов для удаления\n";
         return;
     }
     
-    pokazat(massiv, kol);
-    std::cout << "Номер для удаления: ";
-    int nom;
-    std::cin >> nom;
+    pokazat();
+    int nomer = vvodCisla("Номер кота для удаления: ", 1, m_kolichestvo);
     
-    if (nom < 1 || nom > kol) {
-        std::cout << "Не так\n";
+    delete m_koty[nomer - 1];
+    umenshitMassiv(nomer - 1);
+    m_kolichestvo--;
+    
+    std::cout << "Кот удалён\n";
+}
+
+void BazaKotov::redakt() {
+    if (m_kolichestvo == 0) {
+        std::cout << "Нет котов для редактирования\n";
         return;
     }
     
-    delete massiv[nom-1];
+    pokazat();
+    int nomer = vvodCisla("Номер кота для редактирования: ", 1, m_kolichestvo);
     
-    Kot** noviy = new Kot*[kol - 1];
-    for (int i = 0, j = 0; i < kol; i++) {
-        if (i != nom-1) {
-            noviy[j] = massiv[i];
-            j++;
+    Kot* kot = m_koty[nomer - 1];
+    
+    std::cout << "\n--- Редактирование кота ---\n";
+    std::string imya = vvodStroki("Новое имя (" + kot->getImya() + "): ");
+    if (!imya.empty()) kot->setImya(imya);
+    
+    std::string poroda = vvodStroki("Новая порода (" + kot->getPoroda() + "): ");
+    if (!poroda.empty()) kot->setPoroda(poroda);
+    
+    int vozrast = vvodCisla("Новый возраст (" + std::to_string(kot->getVozrast()) + "): ", 0, 30);
+    if (vozrast >= 0) kot->setVozrast(vozrast);
+    
+    std::string cvet = vvodStroki("Новый окрас (" + kot->getCvet() + "): ");
+    if (!cvet.empty()) kot->setCvet(cvet);
+    
+    std::string primeti = vvodStroki("Новые приметы (" + kot->getPrimeti() + "): ");
+    if (!primeti.empty()) kot->setPrimeti(primeti);
+    
+    bool naMeste = vvodBoolean("На месте? (y/n, сейчас " +
+                                std::string(kot->getNaMeste() ? "да" : "нет") + "): ");
+    kot->setNaMeste(naMeste);
+    
+    std::cout << "Кот отредактирован\n";
+}
+
+int BazaKotov::vvodCisla(const std::string& prompt, int min, int max) {
+    int znachenie;
+    while (true) {
+        std::cout << prompt;
+        std::string input;
+        std::getline(std::cin, input);
+        
+        std::stringstream ss(input);
+        if (ss >> znachenie && znachenie >= min && znachenie <= max) {
+            return znachenie;
         }
+        std::cout << "ERROR: Введите число от " << min << " до " << max << "\n";
     }
-    
-    delete[] massiv;
-    massiv = noviy;
-    kol--;
-    std::cout << "Удалил\n";
 }
 
-void BazaKotov::redakt(Kot** massiv, int kol) {
-    if (kol == 0) {
-        std::cout << "Некого\n";
-        return;
+std::string BazaKotov::vvodStroki(const std::string& prompt) {
+    std::cout << prompt;
+    std::string result;
+    std::getline(std::cin, result);
+    return result;
+}
+
+bool BazaKotov::vvodBoolean(const std::string& prompt) {
+    while (true) {
+        std::cout << prompt;
+        std::string input;
+        std::getline(std::cin, input);
+        
+        if (input == "y" || input == "Y" || input == "yes" || input == "YES") {
+            return true;
+        }
+        if (input == "n" || input == "N" || input == "no" || input == "NO") {
+            return false;
+        }
+        std::cout << "Введите y или n\n";
     }
-    
-    pokazat(massiv, kol);
-    std::cout << "Номер кота: ";
-    int nom;
-    std::cin >> nom;
-    std::cin.ignore();
-    
-    if (nom < 1 || nom > kol) {
-        std::cout << "Не то\n";
-        return;
-    }
-    
-    Kot* k = massiv[nom-1];
-    std::string tmp;
-    
-    std::cout << "Новое имя (" << k->getImya() << "): ";
-    std::getline(std::cin, tmp); if (!tmp.empty()) k->setImya(tmp);
-    
-    std::cout << "Новая порода (" << k->getPoroda() << "): ";
-    std::getline(std::cin, tmp); if (!tmp.empty()) k->setPoroda(tmp);
-    
-    std::cout << "Новый возраст (" << k->getVozrast() << "): ";
-    std::getline(std::cin, tmp); if (!tmp.empty()) k->setVozrast(std::stoi(tmp));
-    
-    std::cout << "Новый окрас (" << k->getCvet() << "): ";
-    std::getline(std::cin, tmp); if (!tmp.empty()) k->setCvet(tmp);
-    
-    std::cout << "Новые приметы (" << k->getPrimeti() << "): ";
-    std::getline(std::cin, tmp); if (!tmp.empty()) k->setPrimeti(tmp);
-    
-    std::cout << "На месте? (y/n, сейчас " << (k->getNaMeste() ? "да" : "нет") << "): ";
-    char ch; std::cin >> ch; std::cin.ignore();
-    if (ch == 'y' || ch == 'Y') k->setNaMeste(true);
-    else if (ch == 'n' || ch == 'N') k->setNaMeste(false);
-    
-    std::cout << "Обновил\n";
 }
