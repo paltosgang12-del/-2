@@ -1,17 +1,41 @@
-#ifndef BAZA_H
-#define BAZA_H
+#ifndef BAZA_KOTOV_HPP
+#define BAZA_KOTOV_HPP
 
 #include "kot.h"
+#include <string>
 
-namespace BazaKotov {
-    void zagruzit(const char* file, Kot** &massiv, int &kol);
-    void sohranit(const char* file, Kot** massiv, int kol);
-    void pokazat(Kot** massiv, int kol);
-    void poisk(Kot** massiv, int kol);
-    void dobavit(Kot** &massiv, int &kol);
-    void udalit(Kot** &massiv, int &kol);
-    void redakt(Kot** massiv, int kol);
-    void menu();
-}
+class BazaKotov {
+private:
+    Kot** m_koty;
+    int m_kolichestvo;
+    std::string m_imyaFaila;
+
+    void udvoitMassiv();
+    void umenshitMassiv(int index);
+
+public:
+    BazaKotov();
+    explicit BazaKotov(const std::string& imyaFaila);
+    ~BazaKotov();
+
+    BazaKotov(const BazaKotov&) = delete;
+    BazaKotov& operator=(const BazaKotov&) = delete;
+
+    bool zagruzit();
+    bool sohranit() const;
+    void sohranitKak(const std::string& novoeImya);
+
+    void pokazat() const;
+    void poisk() const;
+    void dobavit();
+    void udalit();
+    void redakt();
+
+    int poluchitKolichestvo() const { return m_kolichestvo; }
+    
+    static int vvodCisla(const std::string& prompt, int min = 1, int max = 1000000);
+    static std::string vvodStroki(const std::string& prompt);
+    static bool vvodBoolean(const std::string& prompt);
+};
 
 #endif

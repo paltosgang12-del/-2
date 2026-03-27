@@ -1,47 +1,56 @@
 #include "baza.h"
-#include "kot.h"
 #include <iostream>
+#include <string>
 
-int main() {
-    Kot** koty = nullptr;
-    int skolko = 0;
+void pokazatMenu() {
+    std::cout << "\n===== КОТОКАФЕ =====\n";
+    std::cout << "1. Показать всех котов\n";
+    std::cout << "2. Найти кота\n";
+    std::cout << "3. Добавить кота\n";
+    std::cout << "4. Удалить кота\n";
+    std::cout << "5. Редактировать кота\n";
+    std::cout << "6. Сохранить и выйти\n";
+    std::cout << "Выбери: ";
+}
+
+int main(int argc, char* argv[]) {
+    std::string imyaFaila = "koty.txt";
     
-    BazaKotov::zagruzit("koty.txt", koty, skolko);
+    if (argc > 1) {
+        imyaFaila = argv[1];
+        std::cout << "Использую файл: " << imyaFaila << "\n";
+    }
+    
+    BazaKotov baza(imyaFaila);
+    baza.zagruzit();
     
     int vibor;
     do {
-        BazaKotov::menu();
-        std::cin >> vibor;
+        pokazatMenu();
+        vibor = BazaKotov::vvodCisla("", 1, 6);
         
         switch (vibor) {
             case 1:
-                BazaKotov::pokazat(koty, skolko);
+                baza.pokazat();
                 break;
             case 2:
-                BazaKotov::poisk(koty, skolko);
+                baza.poisk();
                 break;
             case 3:
-                BazaKotov::dobavit(koty, skolko);
+                baza.dobavit();
                 break;
             case 4:
-                BazaKotov::udalit(koty, skolko);
+                baza.udalit();
                 break;
             case 5:
-                BazaKotov::redakt(koty, skolko);
+                baza.redakt();
                 break;
             case 6:
-                BazaKotov::sohranit("koty.txt", koty, skolko);
-                std::cout << "Пока!\n";
+                baza.sohranit();
+                std::cout << "До встречи\n";
                 break;
-            default:
-                std::cout << "Не то\n";
         }
     } while (vibor != 6);
-    
-    for (int i = 0; i < skolko; i++) {
-        delete koty[i];
-    }
-    delete[] koty;
     
     return 0;
 }
